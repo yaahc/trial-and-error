@@ -1,6 +1,6 @@
 # Trial and Error
 
-## An experimental crate for proof-of-concept proposals from the Error Handling Project Group
+An experimental crate for proof-of-concept proposals from the Error Handling Project Group
 
 This crate contains the following experimental modules:
 
