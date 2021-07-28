@@ -1,4 +1,4 @@
-//! Experimental version of `std::error::Report` proposal
+//! Experimental version of `std::error::Report` proposal.
 
 use std::{
     error::Error,
@@ -57,7 +57,7 @@ where
         Ok(())
     }
 
-    /// Format the report as multiple lines, with each cause on its own line.
+    /// Format the report as multiple lines, with each error cause on its own line.
     fn fmt_multiline(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let error = &self.source;
 
