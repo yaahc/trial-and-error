@@ -1,11 +1,14 @@
-//! Experimental replacement for `Box<dyn Error>` that implements `Error`
+//! Experimental replacement for `Box<dyn Error>` that implements `Error`.
+
 use std::error::Error;
 use std::fmt;
 
 type BoxError = Box<dyn Error + Send + Sync + 'static>;
 
+/// Wrapper type for a `BoxError`.
 #[derive(Debug)]
 pub struct DynError {
+    /// The inner wrapped `BoxError`.
     error: BoxError,
 }
 
@@ -15,7 +18,7 @@ impl fmt::Display for DynError {
     }
 }
 
-/// This type _does_ implement error
+/// This type _does_ implement error 🙌
 impl Error for DynError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         self.error.source()
@@ -23,6 +26,7 @@ impl Error for DynError {
 }
 
 impl DynError {
+    /// Create a new `DynError` from an input error.
     fn new<E>(error: E) -> Self
     where
         BoxError: From<E>,
@@ -34,7 +38,7 @@ impl DynError {
         //
         // This is effectively resolving the "overlap rule" issue with `Box<dyn
         // Error + ...>` at runtime by always boxing it and then checking if it
-        // shouldn't have after the fact with `downcast`.
+        // shouldn't have after-the-fact with `downcast`.
         //
         // Check if the erased error type is already the type we want
         match error.downcast::<DynError>() {
@@ -49,13 +53,14 @@ impl DynError {
 use std::ops::{ControlFlow, FromResidual, Try};
 use std::process::Termination;
 
-/// Result that always converts error types to an `DynError`
+/// Result that always converts error types to an `DynError`.
 pub enum DynResult<T> {
     Ok(T),
     Err(DynError),
 }
 
 impl<T> Termination for DynResult<T> {
+    /// Return an error code corresponding with the `DynResult`; 0 for success, 1 for failure.
     fn report(self) -> i32 {
         match self {
             DynResult::Ok(_) => 0,
@@ -67,6 +72,7 @@ impl<T> Termination for DynResult<T> {
     }
 }
 
+// Implements `Try` on `DynResult` so that the `?` operator can be used on it
 impl<T> Try for DynResult<T> {
     type Output = T;
     type Residual = DynResult<!>;
@@ -75,7 +81,7 @@ impl<T> Try for DynResult<T> {
         DynResult::Ok(value)
     }
 
-    fn branch(self) -> ControlFlow<DynResult<!>, T> {
+    fn branch(self) -> ControlFlow<Residual, T> {
         match self {
             DynResult::Ok(value) => ControlFlow::Continue(value),
             DynResult::Err(error) => ControlFlow::Break(DynResult::Err(error)),
