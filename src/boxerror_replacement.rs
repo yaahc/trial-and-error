@@ -81,7 +81,7 @@ impl<T> Try for DynResult<T> {
         DynResult::Ok(value)
     }
 
-    fn branch(self) -> ControlFlow<Residual, T> {
+    fn branch(self) -> ControlFlow<Self::Residual, T> {
         match self {
             DynResult::Ok(value) => ControlFlow::Continue(value),
             DynResult::Err(error) => ControlFlow::Break(DynResult::Err(error)),
