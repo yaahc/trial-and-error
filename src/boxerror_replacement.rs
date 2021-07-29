@@ -61,7 +61,9 @@ use std::process::Termination;
 
 /// Result that always converts error types to an `DynError`.
 pub enum DynResult<T> {
+    /// The Ok variant of the `DynResult`.
     Ok(T),
+    /// The Err variant of the `DynResult` containing a `DynError`.
     Err(DynError),
 }
 

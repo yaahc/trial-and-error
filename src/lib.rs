@@ -15,6 +15,18 @@
 #![feature(backtrace)]
 #![feature(error_iter)]
 
+#![warn(
+    missing_docs,
+    rust_2018_idioms,
+    unreachable_pub,
+    bad_style,
+    dead_code,
+    private_in_public,
+    unused,
+    unused_parens,
+    unused_comparisons,
+)]
+
 pub mod boxerror_replacement;
 pub mod error_reporter;
 
