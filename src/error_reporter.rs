@@ -1,4 +1,13 @@
-//! Experimental version of `std::error::Report` proposal.
+//! Experimental version of `std::error::Report` proposal [add link once the RFC has been written].
+//!
+//! The `Error::source` method on the `Error` trait is one way in which error chains may be exposed
+//! and interacted with. However, currently, the method only returns the top-most error in the
+//! chain, such that the rest of the context encapsulated in the error chain (including the root
+//! error itself) are not presented. 
+//!
+//! This module defines a `Report` type that exposes the entire error chain, not just the top-most
+//! error. The `Report` type also exposes options for formatting the error chain (currently either
+//! as a single line, or in a multi-line format with each cause in the error chain on a new line).
 
 use std::{
     error::Error,

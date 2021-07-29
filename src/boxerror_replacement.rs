@@ -1,11 +1,17 @@
 //! Experimental replacement for `Box<dyn Error>` that implements `Error`.
+//!
+//! This module introduces the `DynError` type, which owns an inner 
+//! `Box<dyn Error>`. Most importantly, the `DynError` type implements the `Error`
+//! trait, unlike a plain `Box<dyn Error>`. Another important distinction between
+//! `DynError` and `Box<dyn Error>` is that `DynError` _doesn't_ implement 
+//! `From<E: Error>`. 
 
 use std::error::Error;
 use std::fmt;
 
 type BoxError = Box<dyn Error + Send + Sync + 'static>;
 
-/// Wrapper type for a `BoxError`.
+/// Owning type for a `BoxError`.
 #[derive(Debug)]
 pub struct DynError {
     /// The inner wrapped `BoxError`.
@@ -75,6 +81,8 @@ impl<T> Termination for DynResult<T> {
 // Implements `Try` on `DynResult` so that the `?` operator can be used on it
 impl<T> Try for DynResult<T> {
     type Output = T;
+    // `DynResult<!>` is a one-variant enum that can only ever hold an error variant
+    // It can't possibly hold an Ok variant
     type Residual = DynResult<!>;
 
     fn from_output(value: T) -> Self {
