@@ -1,4 +1,5 @@
-//! Experimental version of `std::error::Report` proposal [add link once the RFC has been written].
+//! Experimental version of `std::error::Report` proposal.
+//! TODO: add link to RFC once it's been written.
 //!
 //! The `Error::source` method on the `Error` trait is one way in which error chains may be exposed
 //! and interacted with. However, currently, the method only returns the top-most error in the

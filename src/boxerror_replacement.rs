@@ -47,7 +47,7 @@ impl DynError {
     /// Create a new `DynError` from an input error.
     fn new<E>(error: E) -> Self
     where
-        BoxError: From<E>,
+        E: Error + Send + Sync + 'static,
     {
         let error = BoxError::from(error);
 
@@ -113,7 +113,7 @@ impl<T> Try for DynResult<T> {
 
 impl<T, E> FromResidual<Result<!, E>> for DynResult<T>
 where
-    BoxError: From<E>,
+    E: Error + Send + Sync + 'static,
 {
     fn from_residual(inner: Result<!, E>) -> Self {
         let Err(error) = inner;
