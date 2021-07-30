@@ -1,13 +1,22 @@
 //! Experimental replacement for `Box<dyn Error>` that implements `Error`.
 //!
-//! This module introduces the `DynError` type, which owns an inner 
-//! `Box<dyn Error>`. Most importantly, the `DynError` type implements the `Error`
-//! trait, unlike a plain `Box<dyn Error>`. Another important distinction between
-//! `DynError` and `Box<dyn Error>` is that `DynError` _doesn't_ implement 
-//! `From<E: Error>`. 
+//! This module introduces the `DynError` type, which owns an inner `Box<dyn Error>`. Most
+//! importantly, `DynError` _does_ implement the `Error` trait, unlike `Box<dyn Error>`. As a
+//! result, `DynError` is more conveniently compatible with the rest of the error handling
+//! ecosystem, and behaves as any other error type does. 
+//!
+//! The short answer as to why `Box<dyn Error>` doesn't implement `Error` is because there 
+//! exists a blanket implementation of the `Error` trait for `Box<T>`, more specifically: 
+//! `impl<T: Error + Sized> Error for Box<T>`. Crucially, any type `T` must be sized. However, 
+//! when `T` is a `dyn Error` trait object, it is _not_ sized. For more context on why 
+//! `Box<dyn Error>` doesn't implement the `Error` trait, see 
+//! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error. 
+//!
+//! Another important distinction between `DynError` and `Box<dyn Error>` is that `DynError`
+//! _doesn't_ implement `From<E: Error>`. 
 
-use std::error::Error;
 use std::fmt;
+use std::error::Error;
 
 type BoxError = Box<dyn Error + Send + Sync + 'static>;
 
@@ -24,7 +33,7 @@ impl fmt::Display for DynError {
     }
 }
 
-/// This type _does_ implement error 🙌
+/// This type _does_ implement `Error` 🙌
 impl Error for DynError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         self.error.source()
