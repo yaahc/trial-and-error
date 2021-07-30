@@ -13,7 +13,10 @@
 //! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error. 
 //!
 //! Another important distinction between `DynError` and `Box<dyn Error>` is that `DynError`
-//! _doesn't_ implement `From<E: Error>`. 
+//! _doesn't_ implement `From<E: Error>`, as this would violate the Overlap Rule. As a result of
+//! this, `DynError`s must be mapped to a `DynResult` first, which can then be manually converted
+//! into a `Result`. This is a bit of an ergonomic hit; it also introduces a bit of runtime
+//! overhead as converting from a `DynError` to a `DynResult` requires downcasting at runtime.
 
 use std::fmt;
 use std::error::Error;
