@@ -8,12 +8,17 @@
 //! The short answer as to why `Box<dyn Error>` doesn't implement `Error` is because there 
 //! exists a blanket implementation of the `Error` trait for `Box<T>`, more specifically: 
 //! `impl<T: Error + Sized> Error for Box<T>`. Crucially, any type `T` must be sized. However, 
-//! when `T` is a `dyn Error` trait object, it is _not_ sized. For more context on why 
+//! when `T` is a `dyn Error` trait object, it is _not_ sized. This constraint could be loosened by
+//! altering the implementation to not require that `T` be `Sized`, such that it becomes
+//! `impl<T: Error + ?Sized> Error for Box<T>`, however, this altered implementation overlaps with 
+//! the `From` trait's `impl<T> From<T> for T` blanket implementation. For more context on why 
 //! `Box<dyn Error>` doesn't implement the `Error` trait, see 
 //! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error. 
 //!
-//! Another important distinction between `DynError` and `Box<dyn Error>` is that `DynError`
-//! _doesn't_ implement `From<E: Error>`, as this would violate the Overlap Rule. As a result of
+//! `DynError` circumvents this overlap by being paired with a corresponding `DynResult` that
+//! implements a different set of `FromResidual` impls.
+//!
+//! As a result of
 //! this, `DynError`s must be mapped to a `DynResult` first, which can then be manually converted
 //! into a `Result`. This is a bit of an ergonomic hit; it also introduces a bit of runtime
 //! overhead as converting from a `DynError` to a `DynResult` requires downcasting at runtime.
@@ -111,6 +116,7 @@ impl<T> Try for DynResult<T> {
     }
 }
 
+// Given a `Result::Err(E)`, convert it to a `DynResult::Err(E)`
 impl<T, E> FromResidual<Result<!, E>> for DynResult<T>
 where
     E: Error + Send + Sync + 'static,
@@ -122,6 +128,7 @@ where
     }
 }
 
+// Given a `DynResult` emitted by a `?`, convert it to a `DynResult::Err(E)`
 impl<T> FromResidual<DynResult<!>> for DynResult<T> {
     fn from_residual(residual: DynResult<!>) -> Self {
         let DynResult::Err(error) = residual;
@@ -129,6 +136,7 @@ impl<T> FromResidual<DynResult<!>> for DynResult<T> {
     }
 }
 
+// Given a `DynResult` emitted by a `?`, convert it to a `Result::Err(E)`
 impl<T> FromResidual<DynResult<!>> for Result<T, BoxError> {
     fn from_residual(residual: DynResult<!>) -> Self {
         let DynResult::Err(error) = residual;
