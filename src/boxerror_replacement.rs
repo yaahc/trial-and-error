@@ -15,13 +15,12 @@
 //! `Box<dyn Error>` doesn't implement the `Error` trait, see 
 //! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error. 
 //!
-//! `DynError` circumvents this overlap by being paired with a corresponding `DynResult` that
-//! implements a different set of `FromResidual` impls.
-//!
-//! As a result of
-//! this, `DynError`s must be mapped to a `DynResult` first, which can then be manually converted
-//! into a `Result`. This is a bit of an ergonomic hit; it also introduces a bit of runtime
-//! overhead as converting from a `DynError` to a `DynResult` requires downcasting at runtime.
+//! `DynError` circumvents this overlap by being paired with a corresponding `DynResult` type that
+//! implements its own set of `FromResidual` impls (these exist so that `DynResult` works the same
+//! way with the `?` operator as `Result`). However, `DynError`s can only be mapped to `Result`s by
+//! way of converting the `DynError` into a `DynResult` first. This is a bit of an ergonomic hit;
+//! it introduces a bit of runtime overhead as converting from a `DynError` to a `DynResult`
+//! requires downcasting at runtime.
 
 use std::fmt;
 use std::error::Error;
