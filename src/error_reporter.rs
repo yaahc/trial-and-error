@@ -1,16 +1,27 @@
-//! Experimental version of `std::error::Report` proposal
+//! Experimental version of `std::error::Report` proposal.
+//! TODO: add link to RFC once it's been written.
+//!
+//! The `Error::source` method on the `Error` trait is one way in which error chains may be exposed
+//! and interacted with. However, currently, the method only returns the top-most error in the
+//! chain, such that the rest of the context encapsulated in the error chain (including the root
+//! error itself) are not presented. 
+//!
+//! This module defines a `Report` type that exposes the entire error chain, not just the top-most
+//! error. The `Report` type also exposes options for formatting the error chain (currently either
+//! as a single line, or in a multi-line format with each cause in the error chain on a new line).
 
 use std::{
     error::Error,
     fmt::{self, Write},
 };
 
+/// The main `Report` type.
 pub struct Report<E> {
     /// The error being reported.
     source: E,
-
-    // Configuration flags for report format.
+    /// Whether the full backtrace should be included as part of the report.
     show_backtrace: bool,
+    /// Whether the report should be pretty printed.
     pretty: bool,
 }
 
@@ -18,6 +29,7 @@ impl<E> Report<E>
 where
     E: Error,
 {
+    /// Create a new `Report` from an input error.
     pub fn new(source: E) -> Report<E> {
         Report {
             source,
@@ -25,17 +37,20 @@ where
             pretty: false,
         }
     }
-
+    
+    /// Sets the report's `pretty` flag.
     pub fn pretty(&mut self, pretty: bool) -> &mut Report<E> {
         self.pretty = pretty;
         self
     }
 
+    /// Sets the report's `show_backtrace` flag.
     pub fn show_backtrace(&mut self, show_backtrace: bool) -> &mut Report<E> {
         self.show_backtrace = show_backtrace;
         self
     }
-
+    
+    /// Format the report as a single line.
     fn fmt_singleline(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.source)?;
 
@@ -52,6 +67,7 @@ where
         Ok(())
     }
 
+    /// Format the report as multiple lines, with each error cause on its own line.
     fn fmt_multiline(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let error = &self.source;
 
@@ -128,27 +144,30 @@ where
         fmt::Display::fmt(self, f)
     }
 }
+
+/// Encapsulates how error sources are indented and formatted.
 struct Indented<'a, D: ?Sized> {
     inner: &'a mut D,
     needs_indent: bool,
     format: Format,
 }
 
+/// The possible variants that error sources can be formatted as.
 #[derive(Clone, Copy)]
 enum Format {
-    /// Insert uniform indentation before every line
+    /// Insert uniform indentation before every line.
     ///
-    /// This format takes a static string as input and inserts it after every newline
+    /// This format takes a static string as input and inserts it after every newline.
     Uniform {
-        /// The string to insert as indentation
+        /// The string to insert as indentation.
         indentation: &'static str,
     },
-    /// Inserts a number before the first line
+    /// Inserts a number before the first line.
     ///
     /// This format hard codes the indentation level to match the indentation from
-    /// `std::backtrace::Backtrace`
+    /// `std::backtrace::Backtrace`.
     Numbered {
-        /// The index to insert before the first line of output
+        /// The index to insert before the first line of output.
         ind: usize,
     },
 }
@@ -182,6 +201,7 @@ where
 }
 
 impl Format {
+    /// Write the specified formatting to the write buffer.
     fn insert_indentation(&mut self, line: usize, f: &mut dyn Write) -> fmt::Result {
         match self {
             Format::Uniform { indentation } => {

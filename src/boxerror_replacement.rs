@@ -1,11 +1,38 @@
-//! Experimental replacement for `Box<dyn Error>` that implements `Error`
-use std::error::Error;
+//! Experimental replacement for `Box<dyn Error>` that implements `Error`.
+//!
+//! This module introduces the `DynError` type, which owns an inner `Box<dyn Error>`. Most
+//! importantly, `DynError` _does_ implement the `Error` trait, unlike `Box<dyn Error>`. As a
+//! result, `DynError` is more conveniently compatible with the rest of the error handling
+//! ecosystem, and behaves as any other error type does. 
+//!
+//! The short answer as to why `Box<dyn Error>` doesn't implement `Error` is because there 
+//! exists a blanket implementation of the `Error` trait for `Box<T>`, more specifically: 
+//! `impl<T: Error + Sized> Error for Box<T>`. Crucially, any type `T` must be sized. However, 
+//! when `T` is a `dyn Error` trait object, it is _not_ sized. This constraint could be loosened by
+//! altering the implementation to not require that `T` be `Sized`, such that it becomes
+//! `impl<T: Error + ?Sized> Error for Box<T>`, however, this altered implementation causes overlap
+//! between the `From` trait's `impl<T> From<T> for T` blanket implementation and Box's `impl<'a,
+//! E: Error + 'a> From<E> for Box<dyn Error + 'a>`.
+//!
+//! For more context on why `Box<dyn Error>` doesn't implement the `Error` trait, see 
+//! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error. 
+//!
+//! `DynError` circumvents this overlap by being paired with a corresponding `DynResult` type that
+//! implements its own set of `FromResidual` impls (these exist so that `DynResult` works the same
+//! way with the `?` operator as `Result`). However, as a result, `DynError`s can only be
+//! constructed with `?` from arbitrary error types when paired with `DynResult`. Using a
+//! `Result<T, DynError>` will require manual conversion of error types due to it missing the
+//! `From` impl that is present on `Box<dyn Error>`. 
+
 use std::fmt;
+use std::error::Error;
 
 type BoxError = Box<dyn Error + Send + Sync + 'static>;
 
+/// Owning type for a `BoxError`.
 #[derive(Debug)]
 pub struct DynError {
+    /// The inner wrapped `BoxError`.
     error: BoxError,
 }
 
@@ -15,7 +42,7 @@ impl fmt::Display for DynError {
     }
 }
 
-/// This type _does_ implement error
+/// This type _does_ implement `Error` 🙌
 impl Error for DynError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         self.error.source()
@@ -23,9 +50,10 @@ impl Error for DynError {
 }
 
 impl DynError {
+    /// Create a new `DynError` from an input error.
     fn new<E>(error: E) -> Self
     where
-        BoxError: From<E>,
+        E: Error + Send + Sync + 'static,
     {
         let error = BoxError::from(error);
 
@@ -34,7 +62,7 @@ impl DynError {
         //
         // This is effectively resolving the "overlap rule" issue with `Box<dyn
         // Error + ...>` at runtime by always boxing it and then checking if it
-        // shouldn't have after the fact with `downcast`.
+        // shouldn't have after-the-fact with `downcast`.
         //
         // Check if the erased error type is already the type we want
         match error.downcast::<DynError>() {
@@ -49,13 +77,16 @@ impl DynError {
 use std::ops::{ControlFlow, FromResidual, Try};
 use std::process::Termination;
 
-/// Result that always converts error types to an `DynError`
+/// Result that always converts error types to an `DynError`.
 pub enum DynResult<T> {
+    /// The Ok variant of the `DynResult`.
     Ok(T),
+    /// The Err variant of the `DynResult` containing a `DynError`.
     Err(DynError),
 }
 
 impl<T> Termination for DynResult<T> {
+    /// Return an error code corresponding with the `DynResult`; 0 for success, 1 for failure.
     fn report(self) -> i32 {
         match self {
             DynResult::Ok(_) => 0,
@@ -67,15 +98,18 @@ impl<T> Termination for DynResult<T> {
     }
 }
 
+// Implements `Try` on `DynResult` so that the `?` operator can be used on it
 impl<T> Try for DynResult<T> {
     type Output = T;
+    // `DynResult<!>` is a one-variant enum that can only ever hold an error variant
+    // It can't possibly hold an Ok variant
     type Residual = DynResult<!>;
 
     fn from_output(value: T) -> Self {
         DynResult::Ok(value)
     }
 
-    fn branch(self) -> ControlFlow<DynResult<!>, T> {
+    fn branch(self) -> ControlFlow<Self::Residual, T> {
         match self {
             DynResult::Ok(value) => ControlFlow::Continue(value),
             DynResult::Err(error) => ControlFlow::Break(DynResult::Err(error)),
@@ -83,9 +117,10 @@ impl<T> Try for DynResult<T> {
     }
 }
 
+// Given a `Result::Err(E)`, convert it to a `DynResult::Err(E)`
 impl<T, E> FromResidual<Result<!, E>> for DynResult<T>
 where
-    BoxError: From<E>,
+    E: Error + Send + Sync + 'static,
 {
     fn from_residual(inner: Result<!, E>) -> Self {
         let Err(error) = inner;
@@ -94,6 +129,7 @@ where
     }
 }
 
+// Given a `DynResult` emitted by a `?`, convert it to a `DynResult::Err(E)`
 impl<T> FromResidual<DynResult<!>> for DynResult<T> {
     fn from_residual(residual: DynResult<!>) -> Self {
         let DynResult::Err(error) = residual;
@@ -101,6 +137,7 @@ impl<T> FromResidual<DynResult<!>> for DynResult<T> {
     }
 }
 
+// Given a `DynResult` emitted by a `?`, convert it to a `Result::Err(E)`
 impl<T> FromResidual<DynResult<!>> for Result<T, BoxError> {
     fn from_residual(residual: DynResult<!>) -> Self {
         let DynResult::Err(error) = residual;

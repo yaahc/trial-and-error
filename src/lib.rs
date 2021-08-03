@@ -1,9 +1,9 @@
-//! An experiment crate for proposals from the error handling project group.
+//! An experimental crate for proposals from the error handling project group.
 //!
 //! This crate currently contains two experiments, each in their own module.
 //!
 //! 1. An alternative to `Box<dyn Error + ...>` that implements `Error`.
-//! 1. An error reporter that wraps an error and handles iterating over sources
+//! 2. An error reporter that wraps an error and handles iterating over sources
 //!    and formatting a full error report.
 //!
 #![feature(try_trait_v2)]
@@ -14,6 +14,18 @@
 #![feature(exhaustive_patterns)]
 #![feature(backtrace)]
 #![feature(error_iter)]
+
+#![warn(
+    missing_docs,
+    rust_2018_idioms,
+    unreachable_pub,
+    bad_style,
+    dead_code,
+    private_in_public,
+    unused,
+    unused_parens,
+    unused_comparisons,
+)]
 
 pub mod boxerror_replacement;
 pub mod error_reporter;
