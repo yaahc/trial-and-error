@@ -10,17 +10,21 @@
 //! `impl<T: Error + Sized> Error for Box<T>`. Crucially, any type `T` must be sized. However, 
 //! when `T` is a `dyn Error` trait object, it is _not_ sized. This constraint could be loosened by
 //! altering the implementation to not require that `T` be `Sized`, such that it becomes
-//! `impl<T: Error + ?Sized> Error for Box<T>`, however, this altered implementation overlaps with 
-//! the `From` trait's `impl<T> From<T> for T` blanket implementation. For more context on why 
-//! `Box<dyn Error>` doesn't implement the `Error` trait, see 
+//! `impl<T: Error + ?Sized> Error for Box<T>`, however, this altered implementation causes overlap
+//! between the `From` trait's `impl<T> From<T> for T` blanket implementation and Box's `impl<'a,
+//! E: Error + 'a> From<E> for Box<dyn Error + 'a>`.
+//!
+//! For more context on why `Box<dyn Error>` doesn't implement the `Error` trait, see 
 //! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error. 
 //!
 //! `DynError` circumvents this overlap by being paired with a corresponding `DynResult` type that
 //! implements its own set of `FromResidual` impls (these exist so that `DynResult` works the same
-//! way with the `?` operator as `Result`). However, `DynError`s can only be mapped to `Result`s by
-//! way of converting the `DynError` into a `DynResult` first. This is a bit of an ergonomic hit;
-//! it introduces a bit of runtime overhead as converting from a `DynError` to a `DynResult`
-//! requires downcasting at runtime.
+//! way with the `?` operator as `Result`). However, as a result, `DynError`s can only be
+//! constructed with `?` from arbitrary error types when paired with `DynResult`. Using a
+//! `Result<T, DynError>` will require manual conversion of error types due to it missing the
+//! `From` impl that is present on `Box<dyn Error>`. This is a bit of an ergonomic hit; it
+//! introduces a bit of runtime overhead as converting from a `DynError` to a `DynResult` requires
+//! downcasting at runtime.
 
 use std::fmt;
 use std::error::Error;
