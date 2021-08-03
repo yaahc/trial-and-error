@@ -22,9 +22,7 @@
 //! way with the `?` operator as `Result`). However, as a result, `DynError`s can only be
 //! constructed with `?` from arbitrary error types when paired with `DynResult`. Using a
 //! `Result<T, DynError>` will require manual conversion of error types due to it missing the
-//! `From` impl that is present on `Box<dyn Error>`. This is a bit of an ergonomic hit; it
-//! introduces a bit of runtime overhead as converting from a `DynError` to a `DynResult` requires
-//! downcasting at runtime.
+//! `From` impl that is present on `Box<dyn Error>`. 
 
 use std::fmt;
 use std::error::Error;
