@@ -101,9 +101,9 @@ impl<T> Termination for DynResult<T> {
 // Implements `Try` on `DynResult` so that the `?` operator can be used on it
 impl<T> Try for DynResult<T> {
     type Output = T;
-    // `DynResult<!>` is a one-variant enum that can only ever hold an error variant
+    // `DynResult<Infallible>` is a one-variant enum that can only ever hold an error variant
     // It can't possibly hold an Ok variant
-    type Residual = DynResult<!>;
+    type Residual = DynResult<Infallible>;
 
     fn from_output(value: T) -> Self {
         DynResult::Ok(value)
@@ -118,11 +118,11 @@ impl<T> Try for DynResult<T> {
 }
 
 // Given a `Result::Err(E)`, convert it to a `DynResult::Err(E)`
-impl<T, E> FromResidual<Result<!, E>> for DynResult<T>
+impl<T, E> FromResidual<Result<Infallible, E>> for DynResult<T>
 where
     E: Error + Send + Sync + 'static,
 {
-    fn from_residual(inner: Result<!, E>) -> Self {
+    fn from_residual(inner: Result<Infallible, E>) -> Self {
         let Err(error) = inner;
         let error = DynError::new(error);
         DynResult::Err(error)
@@ -130,16 +130,16 @@ where
 }
 
 // Given a `DynResult` emitted by a `?`, convert it to a `DynResult::Err(E)`
-impl<T> FromResidual<DynResult<!>> for DynResult<T> {
-    fn from_residual(residual: DynResult<!>) -> Self {
+impl<T> FromResidual<DynResult<Infallible>> for DynResult<T> {
+    fn from_residual(residual: DynResult<Infallible>) -> Self {
         let DynResult::Err(error) = residual;
         DynResult::Err(error)
     }
 }
 
 // Given a `DynResult` emitted by a `?`, convert it to a `Result::Err(E)`
-impl<T> FromResidual<DynResult<!>> for Result<T, BoxError> {
-    fn from_residual(residual: DynResult<!>) -> Self {
+impl<T> FromResidual<DynResult<Infallible>> for Result<T, BoxError> {
+    fn from_residual(residual: DynResult<Infallible>) -> Self {
         let DynResult::Err(error) = residual;
         let error = BoxError::from(error);
         Err(error)
