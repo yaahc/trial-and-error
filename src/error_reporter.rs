@@ -59,6 +59,39 @@
 //! format:
 //!
 //! ```rust
+//! # use std::fmt;
+//! # use std::error::Error;
+//! # 
+//! # use trial_and_error::Report;
+//! # 
+//! # #[derive(Debug)]
+//! # struct SuperError {
+//! #     side: SuperErrorSidekick,
+//! # }
+//! # 
+//! # impl fmt::Display for SuperError {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperError is here!")
+//! #     }
+//! # }
+//! # 
+//! # impl Error for SuperError {
+//! #     fn source(&self) -> Option<&(dyn Error + 'static)> {
+//! #         Some(&self.side)
+//! #     }
+//! # }
+//! # 
+//! # #[derive(Debug)]
+//! # struct SuperErrorSidekick;
+//! # 
+//! # impl fmt::Display for SuperErrorSidekick {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperErrorSidekick is here!")
+//! #     }
+//! # }
+//! # 
+//! # impl Error for SuperErrorSidekick {}
+//!
 //! fn main() {
 //!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
 //!     
@@ -75,6 +108,39 @@
 //! Or we can print it out in multiline format by specifying the `pretty` option:
 //!
 //! ```rust
+//! # use std::fmt;
+//! # use std::error::Error;
+//! # 
+//! # use trial_and_error::Report;
+//! # 
+//! # #[derive(Debug)]
+//! # struct SuperError {
+//! #     side: SuperErrorSidekick,
+//! # }
+//! # 
+//! # impl fmt::Display for SuperError {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperError is here!")
+//! #     }
+//! # }
+//! # 
+//! # impl Error for SuperError {
+//! #     fn source(&self) -> Option<&(dyn Error + 'static)> {
+//! #         Some(&self.side)
+//! #     }
+//! # }
+//! # 
+//! # #[derive(Debug)]
+//! # struct SuperErrorSidekick;
+//! # 
+//! # impl fmt::Display for SuperErrorSidekick {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperErrorSidekick is here!")
+//! #     }
+//! # }
+//! # 
+//! # impl Error for SuperErrorSidekick {}
+//!
 //! fn main() {
 //!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
 //!     let pretty_report = report.pretty(true);
@@ -97,9 +163,41 @@
 //!
 //! ```rust
 //! #![feature(negative_impls)]
+//! # use std::fmt;
+//! # use std::error::Error;
+//! 
+//! # use trial_and_error::Report;
 //!
 //! impl !Send for SuperError {}
 //! impl !Sync for SuperError {}
+//! 
+//! # #[derive(Debug)]
+//! # struct SuperError {
+//! #     side: SuperErrorSidekick,
+//! # }
+//! # 
+//! # impl fmt::Display for SuperError {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperError is here!")
+//! #     }
+//! # }
+//! # 
+//! # impl Error for SuperError {
+//! #     fn source(&self) -> Option<&(dyn Error + 'static)> {
+//! #         Some(&self.side)
+//! #     }
+//! # }
+//! # 
+//! # #[derive(Debug)]
+//! # struct SuperErrorSidekick;
+//! # 
+//! # impl fmt::Display for SuperErrorSidekick {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperErrorSidekick is here!")
+//! #     }
+//! # }
+//! # 
+//! # impl Error for SuperErrorSidekick {}
 //!
 //! fn main() {
 //!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
