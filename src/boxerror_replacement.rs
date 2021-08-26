@@ -3,9 +3,7 @@
 //! This module introduces the `DynError` type, which owns an inner `Box<dyn Error>`. Most
 //! importantly, `DynError` _does_ implement the `Error` trait, unlike `Box<dyn Error>`. As a
 //! result, `DynError` is more conveniently compatible with the rest of the error handling
-//! ecosystem, and behaves just like any other error type does. 
-//!
-//! # Background
+//! ecosystem, and behaves as any other error type does. 
 //!
 //! The short answer as to why `Box<dyn Error>` doesn't implement `Error` is because there 
 //! exists a blanket implementation of the `Error` trait for `Box<T>`, more specifically: 
@@ -25,31 +23,9 @@
 //! constructed with `?` from arbitrary error types when paired with `DynResult`. Using a
 //! `Result<T, DynError>` will require manual conversion of error types due to it missing the
 //! `From` impl that is present on `Box<dyn Error>`. 
-//!
-//! # Examples
-//!
-//! `DynResult` is not quite a drop-in replacement for `Box<dyn Error>`. Some noticeable
-//! differences include the aforementioned requirement that any time we have a function that might
-//! result in a `DynResult`, that function must use the corresponding `DynResult` type as its
-//! return type.
-//!
-//! ```rust
-//! use trial_and_error::DynResult;
-//!
-//! fn main() -> DynResult<()> {
-//!     let _parsed = "4".parse::<u32>()?;
-//!
-//!     DynResult::Ok(())
-//! }
-//! ```
-//!
-//! Additionally, since `DynError` wraps a `BoxError` type, which is an alias for `Box<dyn Error +
-//! Send + Sync + 'static>`, any error handling API that requires type erased non-thread-safe
-//! errors would not be able to make use of `DynError`.
 
 use std::fmt;
 use std::error::Error;
-use std::convert::Infallible;
 
 type BoxError = Box<dyn Error + Send + Sync + 'static>;
 
@@ -125,9 +101,9 @@ impl<T> Termination for DynResult<T> {
 // Implements `Try` on `DynResult` so that the `?` operator can be used on it
 impl<T> Try for DynResult<T> {
     type Output = T;
-    // `DynResult<Infallible>` is a one-variant enum that can only ever hold an error variant
+    // `DynResult<!>` is a one-variant enum that can only ever hold an error variant
     // It can't possibly hold an Ok variant
-    type Residual = DynResult<Infallible>;
+    type Residual = DynResult<!>;
 
     fn from_output(value: T) -> Self {
         DynResult::Ok(value)
@@ -142,11 +118,11 @@ impl<T> Try for DynResult<T> {
 }
 
 // Given a `Result::Err(E)`, convert it to a `DynResult::Err(E)`
-impl<T, E> FromResidual<Result<Infallible, E>> for DynResult<T>
+impl<T, E> FromResidual<Result<!, E>> for DynResult<T>
 where
     E: Error + Send + Sync + 'static,
 {
-    fn from_residual(inner: Result<Infallible, E>) -> Self {
+    fn from_residual(inner: Result<!, E>) -> Self {
         let Err(error) = inner;
         let error = DynError::new(error);
         DynResult::Err(error)
@@ -154,16 +130,16 @@ where
 }
 
 // Given a `DynResult` emitted by a `?`, convert it to a `DynResult::Err(E)`
-impl<T> FromResidual<DynResult<Infallible>> for DynResult<T> {
-    fn from_residual(residual: DynResult<Infallible>) -> Self {
+impl<T> FromResidual<DynResult<!>> for DynResult<T> {
+    fn from_residual(residual: DynResult<!>) -> Self {
         let DynResult::Err(error) = residual;
         DynResult::Err(error)
     }
 }
 
 // Given a `DynResult` emitted by a `?`, convert it to a `Result::Err(E)`
-impl<T> FromResidual<DynResult<Infallible>> for Result<T, BoxError> {
-    fn from_residual(residual: DynResult<Infallible>) -> Self {
+impl<T> FromResidual<DynResult<!>> for Result<T, BoxError> {
+    fn from_residual(residual: DynResult<!>) -> Self {
         let DynResult::Err(error) = residual;
         let error = BoxError::from(error);
         Err(error)

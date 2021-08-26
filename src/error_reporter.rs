@@ -9,6 +9,104 @@
 //! This module defines a `Report` type that exposes the entire error chain, not just the top-most
 //! error. The `Report` type also exposes options for formatting the error chain (currently either
 //! as a single line, or in a multi-line format with each cause in the error chain on a new line).
+//!
+//! Note that this `Report` type, which we'll refer to as `std::Report`, is not meant as a
+//! replacement for `eyre::Report`. `std::Report` is much more minimal in comparison; its only job
+//! is to expose an interface for formatting errors that you want to print. `eyre::Report` is able
+//! to additionally store an error and additional context. It also supports custom user-defined
+//! output formats, while `std::Report` only makes available a single formatting option that is
+//! intended to be a sensible default for more error handling use cases. 
+//!
+//! # Examples
+//! 
+//! Let's say we're given the following error setup:
+//! ```rust
+//! use std::fmt;
+//! use std::error::Error;
+//! 
+//! use trial_and_error::Report;
+//! 
+//! #[derive(Debug)]
+//! struct SuperError {
+//!     side: SuperErrorSidekick,
+//! }
+//! 
+//! impl fmt::Display for SuperError {
+//!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//!         write!(f, "SuperError is here!")
+//!     }
+//! }
+//! 
+//! impl Error for SuperError {
+//!     fn source(&self) -> Option<&(dyn Error + 'static)> {
+//!         Some(&self.side)
+//!     }
+//! }
+//! 
+//! #[derive(Debug)]
+//! struct SuperErrorSidekick;
+//! 
+//! impl fmt::Display for SuperErrorSidekick {
+//!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//!         write!(f, "SuperErrorSidekick is here!")
+//!     }
+//! }
+//! 
+//! impl Error for SuperErrorSidekick {}
+//! ```
+//! 
+//! We can wrap an instance of our `SuperError` type in a `Report` and print it out in single-line
+//! format:
+//!
+//! ```rust
+//! fn main() {
+//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
+//!     
+//!     println!("{}", report);
+//! }
+//! ```
+//!
+//! This prints:
+//!
+//! ```console
+//! SuperError is here!: SuperErrorSidekick is here!
+//! ```
+//!
+//! Or we can print it out in multiline format by specifying the `pretty` option:
+//!
+//! ```rust
+//! fn main() {
+//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
+//!     let pretty_report = report.pretty(true);
+//!     
+//!     println!("{}", pretty_report);
+//! }
+//! ```
+//!
+//! This prints:
+//!
+//! ```console
+//! SuperError is here!
+//!
+//! Caused by:
+//!     SuperErrorSidekick is here!
+//! ```
+//!
+//! Note that `std::Report` only requires that the wrapped error implements the `Error` trait.
+//! It doesn't require that the wrapped error be `Send`, `Sync`, or `'static`:
+//!
+//! ```rust
+//! #![feature(negative_impls)]
+//!
+//! impl !Send for SuperError {}
+//! impl !Sync for SuperError {}
+//!
+//! fn main() {
+//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
+//!
+//!     println!("{}", report);
+//! }
+//! ```
 
 use std::{
     error::Error,
