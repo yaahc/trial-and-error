@@ -93,7 +93,12 @@
 //! # impl Error for SuperErrorSidekick {}
 //!
 //! fn main() {
-//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
+//!     // `Report` can be given a borrowed error
+//!     let error = SuperError { side: SuperErrorSidekick };
+//!     let mut report = Report::new(&error);
+//!
+//!     // It can also be given an owned error
+//!     // let mut report = Report::new(SuperError { side: SuperErrorSidekick });
 //!     
 //!     println!("{}", report);
 //! }
