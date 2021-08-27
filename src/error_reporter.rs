@@ -157,6 +157,36 @@
 //! Caused by:
 //!     SuperErrorSidekick is here!
 //! ```
+//! 
+//! A report of an error with 0 sources looks like this:
+//! 
+//! ```rust
+//! # use std::fmt;
+//! # use std::error::Error;
+//! # use trial_and_error::Report; 
+//! 
+//! # #[derive(Debug)]
+//! # struct SuperErrorSidekick;
+//! # 
+//! # impl fmt::Display for SuperErrorSidekick {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperErrorSidekick is here!")
+//! #     }
+//! # }
+//! # 
+//! # impl Error for SuperErrorSidekick {}
+//! 
+//! fn main() {
+//!     let mut report = Report::new(SuperErrorSidekick);
+//!     let pretty_report = report.pretty(true);
+//!     
+//!     println!("{}", pretty_report);
+//! }
+//! ```
+//! 
+//! ```console
+//! SuperErrorSidekick is here!
+//! ```
 //!
 //! Note that `std::Report` only requires that the wrapped error implements the `Error` trait.
 //! It doesn't require that the wrapped error be `Send`, `Sync`, or `'static`:
