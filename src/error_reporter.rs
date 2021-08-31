@@ -11,11 +11,12 @@
 //! as a single line, or in a multi-line format with each cause in the error chain on a new line).
 //!
 //! Note that this `Report` type, which we'll refer to as `std::Report`, is not meant as a
-//! replacement for types like `eyre::Report` or `anyhow::Error`. `std::Report` is much more minimal in comparison; its only job
-//! is to expose an interface for formatting errors that you want to print. `eyre::Report` is able
-//! to store an error and additional context. It also supports custom user-defined
-//! output formats, while `std::Report` only makes available a limited set of formatting options that are
-//! intended to be sensible defaults for the most common error handling use cases. 
+//! replacement for types like `eyre::Report` or `anyhow::Error`. `std::Report` is much more
+//! minimal in comparison; its only job is to expose an interface for formatting errors that you
+//! want to print. `eyre::Report` is able to store an error and additional context. It also
+//! supports custom user-defined output formats, while `std::Report` only makes available a limited
+//! set of formatting options that are intended to be sensible defaults for the most common error
+//! handling use cases.
 //!
 //! # Examples
 //! 
