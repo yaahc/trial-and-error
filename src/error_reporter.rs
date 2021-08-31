@@ -13,7 +13,7 @@
 //! Note that this `Report` type, which we'll refer to as `std::Report`, is not meant as a
 //! replacement for types like `eyre::Report` or `anyhow::Error`. `std::Report` is much more minimal in comparison; its only job
 //! is to expose an interface for formatting errors that you want to print. `eyre::Report` is able
-//! to additionally store an error and additional context. It also supports custom user-defined
+//! to store an error and additional context. It also supports custom user-defined
 //! output formats, while `std::Report` only makes available a single formatting option that is
 //! intended to be a sensible default for more error handling use cases. 
 //!
