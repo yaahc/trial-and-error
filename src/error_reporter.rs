@@ -195,7 +195,7 @@
 //! ```
 //!
 //! Note that `std::Report` only requires that the wrapped error implements the `Error` trait.
-//! It doesn't require that the wrapped error be `Send`, `Sync`, or `'static`:
+//! It doesn't require that the wrapped error be `Send` or `Sync`:
 //!
 //! ```rust
 //! #![feature(negative_impls)]
@@ -240,6 +240,91 @@
 //!
 //!     println!("{}", report);
 //! }
+//! ```
+//!
+//! It also is not required that the wrapped error be `'static`. However, if the inner reference
+//! doesn't itself implement `Error`, then it can't be printed by `std::Report` via
+//! `Error::source`. In this situation, use `Display` instead:
+//!
+//! ```rust
+//! # use std::fmt;
+//! # use std::error::Error;
+//!
+//! # use trial_and_error::Report;
+//!
+//! #[derive(Debug)]
+//! struct SuperError<'a> {
+//!     side: &'a str
+//! }
+//!
+//! impl<'a> fmt::Display for SuperError<'a> {
+//!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//!         write!(f, "SuperError is here: {}", self.side)
+//!     }
+//! }
+//!
+//! impl<'a> Error for SuperError<'a> {}
+//!
+//! fn main() {
+//!     let msg = String::from("The source of the error");
+//!     let mut report = Report::new(SuperError { side: &msg });
+//!
+//!     println!("{}", report);
+//! }
+//! ```
+//!
+//! A backtrace of the error can still be printed though even when the error is non-static:
+//!
+//! ```rust
+//! #![feature(backtrace)]
+//!
+//! # use std::fmt;
+//! # use std::error::Error;
+//! use std::backtrace::Backtrace;
+//!
+//! # use trial_and_error::Report;
+//!
+//! #[derive(Debug)]
+//! struct SuperError<'a> {
+//!     side: &'a str,
+//!     backtrace: Option<Backtrace>,
+//! }
+//!
+//! # impl<'a> fmt::Display for SuperError<'a> {
+//! #     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//! #         write!(f, "SuperError is here: {}", self.side)
+//! #     }
+//! # }
+//!
+//! impl<'a> Error for SuperError<'a> {
+//!     fn backtrace(&self) -> Option<&Backtrace> {
+//!         match &self.backtrace {
+//!             None => None,
+//!             Some(bt) => Some(&bt),
+//!         }
+//!     }
+//! }
+//!
+//! fn main() {
+//!     let msg = String::from("The source of the error");
+//!     let mut report = Report::new(SuperError { 
+//!         side: &msg,
+//!         backtrace: Some(Backtrace::capture()),
+//!     });
+//!
+//!     let report = report.pretty(true).show_backtrace(true);
+//!
+//!     println!("{}", report);
+//! }
+//! ```
+//!
+//! This prints out:
+//!
+//! ```console
+//! SuperError is here: The source of the error
+//!
+//! Stack backtrace:
+//! disabled backtrace
 //! ```
 
 use std::{
