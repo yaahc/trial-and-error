@@ -242,9 +242,7 @@
 //! }
 //! ```
 //!
-//! It also is not required that the wrapped error be `'static`. However, if the inner reference
-//! doesn't itself implement `Error`, then it can't be printed by `std::Report` via
-//! `Error::source`. In this situation, use `Display` instead:
+//! It also is not required that the wrapped error be `'static`.
 //!
 //! ```rust
 //! # use std::fmt;
