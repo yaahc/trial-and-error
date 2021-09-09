@@ -96,10 +96,10 @@
 //! fn main() {
 //!     // `Report` can be given a borrowed error
 //!     let error = SuperError { side: SuperErrorSidekick };
-//!     let mut report = Report::new(&error);
+//!     let report = Report::new(&error);
 //!
 //!     // It can also be given an owned error
-//!     // let mut report = Report::new(SuperError { side: SuperErrorSidekick });
+//!     // let report = Report::new(SuperError { side: SuperErrorSidekick });
 //!     
 //!     println!("{}", report);
 //! }
@@ -148,7 +148,7 @@
 //! # impl Error for SuperErrorSidekick {}
 //!
 //! fn main() {
-//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick }).pretty();
+//!     let report = Report::new(SuperError { side: SuperErrorSidekick }).pretty();
 //!     
 //!     println!("{}", report);
 //! }
@@ -182,7 +182,7 @@
 //! # impl Error for SuperErrorSidekick {}
 //! 
 //! fn main() {
-//!     let mut report = Report::new(SuperErrorSidekick).pretty();
+//!     let report = Report::new(SuperErrorSidekick).pretty();
 //!     
 //!     println!("{}", report);
 //! }
@@ -234,7 +234,7 @@
 //! # impl Error for SuperErrorSidekick {}
 //!
 //! fn main() {
-//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
+//!     let report = Report::new(SuperError { side: SuperErrorSidekick });
 //!
 //!     println!("{}", report);
 //! }
