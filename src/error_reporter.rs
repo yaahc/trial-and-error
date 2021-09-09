@@ -264,7 +264,7 @@
 //! impl<'a> Error for SuperError<'a> {}
 //!
 //! fn main() {
-//!     let msg = String::from("The source of the error");
+//!     let msg = String::from("Huzzah!");
 //!     let mut report = Report::new(SuperError { side: &msg });
 //!
 //!     println!("{}", report);
