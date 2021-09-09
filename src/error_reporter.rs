@@ -148,10 +148,9 @@
 //! # impl Error for SuperErrorSidekick {}
 //!
 //! fn main() {
-//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick });
-//!     let pretty_report = report.pretty(true);
+//!     let mut report = Report::new(SuperError { side: SuperErrorSidekick }).pretty();
 //!     
-//!     println!("{}", pretty_report);
+//!     println!("{}", report);
 //! }
 //! ```
 //!
@@ -183,10 +182,9 @@
 //! # impl Error for SuperErrorSidekick {}
 //! 
 //! fn main() {
-//!     let mut report = Report::new(SuperErrorSidekick);
-//!     let pretty_report = report.pretty(true);
+//!     let mut report = Report::new(SuperErrorSidekick).pretty();
 //!     
-//!     println!("{}", pretty_report);
+//!     println!("{}", report);
 //! }
 //! ```
 //! 
@@ -308,9 +306,9 @@
 //!     let mut report = Report::new(SuperError { 
 //!         side: &msg,
 //!         backtrace: Some(Backtrace::capture()),
-//!     });
-//!
-//!     let report = report.pretty(true).show_backtrace(true);
+//!     })
+//!     .pretty()
+//!     .show_backtrace();
 //!
 //!     println!("{}", report);
 //! }
@@ -353,15 +351,15 @@ where
         }
     }
     
-    /// Sets the report's `pretty` flag.
-    pub fn pretty(&mut self, pretty: bool) -> &mut Report<E> {
-        self.pretty = pretty;
+    /// Enable pretty-printing the report.
+    pub fn pretty(mut self) -> Self {
+        self.pretty = true;
         self
     }
-
-    /// Sets the report's `show_backtrace` flag.
-    pub fn show_backtrace(&mut self, show_backtrace: bool) -> &mut Report<E> {
-        self.show_backtrace = show_backtrace;
+    
+    /// Enable showing a backtrace for the repot.
+    pub fn show_backtrace(mut self) -> Self {
+        self.show_backtrace = true;
         self
     }
     
