@@ -357,7 +357,7 @@ where
         self
     }
     
-    /// Enable showing a backtrace for the repot.
+    /// Enable showing a backtrace for the report.
     pub fn show_backtrace(mut self) -> Self {
         self.show_backtrace = true;
         self
