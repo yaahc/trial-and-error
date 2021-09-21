@@ -20,10 +20,7 @@ impl<'a> fmt::Display for SuperError<'a> {
 
 impl<'a> Error for SuperError<'a> {
     fn backtrace(&self) -> Option<&Backtrace> {
-        match &self.backtrace {
-            None => None,
-            Some(bt) => Some(&bt),
-        }
+        self.backtrace.as_ref()
     }
 }
 
