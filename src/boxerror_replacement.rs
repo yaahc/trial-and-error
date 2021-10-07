@@ -3,29 +3,52 @@
 //! This module introduces the `DynError` type, which owns an inner `Box<dyn Error>`. Most
 //! importantly, `DynError` _does_ implement the `Error` trait, unlike `Box<dyn Error>`. As a
 //! result, `DynError` is more conveniently compatible with the rest of the error handling
-//! ecosystem, and behaves as any other error type does. 
+//! ecosystem, and behaves just like any other error type does.
 //!
-//! The short answer as to why `Box<dyn Error>` doesn't implement `Error` is because there 
-//! exists a blanket implementation of the `Error` trait for `Box<T>`, more specifically: 
-//! `impl<T: Error + Sized> Error for Box<T>`. Crucially, any type `T` must be sized. However, 
+//! # Background
+//!
+//! The short answer as to why `Box<dyn Error>` doesn't implement `Error` is because there
+//! exists a blanket implementation of the `Error` trait for `Box<T>`, more specifically:
+//! `impl<T: Error + Sized> Error for Box<T>`. Crucially, any type `T` must be sized. However,
 //! when `T` is a `dyn Error` trait object, it is _not_ sized. This constraint could be loosened by
 //! altering the implementation to not require that `T` be `Sized`, such that it becomes
 //! `impl<T: Error + ?Sized> Error for Box<T>`, however, this altered implementation causes overlap
 //! between the `From` trait's `impl<T> From<T> for T` blanket implementation and Box's `impl<'a,
 //! E: Error + 'a> From<E> for Box<dyn Error + 'a>`.
 //!
-//! For more context on why `Box<dyn Error>` doesn't implement the `Error` trait, see 
-//! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error. 
+//! For more context on why `Box<dyn Error>` doesn't implement the `Error` trait, see
+//! https://stackoverflow.com/questions/65151237/why-doesnt-boxdyn-error-implement-error.
 //!
 //! `DynError` circumvents this overlap by being paired with a corresponding `DynResult` type that
 //! implements its own set of `FromResidual` impls (these exist so that `DynResult` works the same
 //! way with the `?` operator as `Result`). However, as a result, `DynError`s can only be
 //! constructed with `?` from arbitrary error types when paired with `DynResult`. Using a
 //! `Result<T, DynError>` will require manual conversion of error types due to it missing the
-//! `From` impl that is present on `Box<dyn Error>`. 
+//! `From` impl that is present on `Box<dyn Error>`.
+//!
+//! # Examples
+//!
+//! `DynResult` is not quite a drop-in replacement for `Box<dyn Error>`. Some noticeable
+//! differences include the aforementioned requirement that any time we have a function that might
+//! result in a `DynResult`, that function must use the corresponding `DynResult` type as its
+//! return type.
+//!
+//! ```rust
+//! use trial_and_error::DynResult;
+//!
+//! fn main() -> DynResult<()> {
+//!     let _parsed = "4".parse::<u32>()?;
+//!
+//!     DynResult::Ok(())
+//! }
+//! ```
+//!
+//! Additionally, since `DynError` wraps a `BoxError` type, which is an alias for `Box<dyn Error +
+//! Send + Sync + 'static>`, any error handling API that requires type erased non-thread-safe
+//! errors would not be able to make use of `DynError`.
 
-use std::fmt;
 use std::error::Error;
+use std::fmt;
 
 type BoxError = Box<dyn Error + Send + Sync + 'static>;
 
