@@ -186,11 +186,11 @@ where
             write!(f, "\n\nCaused by:")?;
 
             let multiple = cause.source().is_some();
-            let format = if multiple { Some(0) } else { None };
 
-            for error in cause.chain() {
+            for (ind, error) in cause.chain().enumerate() {
                 writeln!(f)?;
 
+                let format = if multiple { Some(ind) } else { None };
                 let mut indented = Indented {
                     buffer: f,
                     needs_indent: true,
@@ -308,6 +308,48 @@ mod tests {
     use std::fmt;
 
     #[derive(Debug)]
+    struct GenericError<D> {
+        message: D,
+        source: Option<Box<dyn Error + 'static>>,
+    }
+
+    impl<D> GenericError<D> {
+        fn new(message: D) -> GenericError<D> {
+            GenericError {
+                message,
+                source: None,
+            }
+        }
+
+        fn new_with_source<E>(message: D, source: E) -> GenericError<D>
+        where
+            E: Error + 'static,
+        {
+            let source: Box<dyn Error + 'static> = Box::new(source);
+            let source = Some(source);
+            GenericError { message, source }
+        }
+    }
+
+    impl<D> fmt::Display for GenericError<D>
+    where
+        D: fmt::Display,
+    {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fmt::Display::fmt(&self.message, f)
+        }
+    }
+
+    impl<D> Error for GenericError<D>
+    where
+        D: fmt::Debug + fmt::Display,
+    {
+        fn source(&self) -> Option<&(dyn Error + 'static)> {
+            self.source.as_deref()
+        }
+    }
+
+    #[derive(Debug)]
     struct SuperError {
         side: SuperErrorSideKick,
     }
@@ -372,6 +414,55 @@ mod tests {
         let expected = String::from("SuperErrorSideKick is here!");
 
         assert_eq!(expected, report.to_string());
+    }
+
+    #[test]
+    fn error_formats_with_rude_display_impl() {
+        #[derive(Debug)]
+        struct MyMessage;
+        impl std::fmt::Display for MyMessage {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("line 1\nline 2")?;
+                f.write_str("\nline 3\nline 4\n")?;
+                f.write_str("line 5\nline 6")?;
+                Ok(())
+            }
+        }
+
+        let error = GenericError::new(MyMessage);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let error = GenericError::new_with_source(MyMessage, error);
+        let report = Report::new(error).pretty(true);
+        let expected = r#"line 1
+line 2
+line 3
+line 4
+line 5
+line 6
+
+Caused by:
+   0: line 1
+      line 2
+      line 3
+      line 4
+      line 5
+      line 6
+   1: line 1
+      line 2
+      line 3
+      line 4
+      line 5
+      line 6
+   2: line 1
+      line 2
+      line 3
+      line 4
+      line 5
+      line 6"#;
+
+        let actual = report.to_string();
+        pretty_assertions::assert_eq!(expected, actual);
     }
 
     #[test]
