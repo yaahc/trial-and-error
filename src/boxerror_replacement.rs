@@ -34,13 +34,13 @@
 //! return type.
 //!
 //! ```rust
-//! use trial_and_error::DynResult;
+//! // use trial_and_error::DynResult;
 //!
-//! fn main() -> DynResult<()> {
-//!     let _parsed = "4".parse::<u32>()?;
+//! // fn main() -> DynResult<()> {
+//! //     let _parsed = "4".parse::<u32>()?;
 //!
-//!     DynResult::Ok(())
-//! }
+//! //     DynResult::Ok(())
+//! // }
 //! ```
 //!
 //! Additionally, since `DynError` wraps a `BoxError` type, which is an alias for `Box<dyn Error +
